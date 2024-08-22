@@ -6,23 +6,19 @@ import pytesseract
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import GoogleGenerativeAI
+import os
 
-
-def get_pdf_text(pdfs):
+def get_pdf_text(pdf):
     text = ""
-    pdf_number = 1
-    for pdf in pdfs:
-        text += f"PDF number {pdf_number}:\n"
-        pdf_reader = PdfReader(pdf)
-        for page_num, page in enumerate(pdf_reader.pages, start=1):
-            images = convert_from_bytes(
-                pdf.getvalue(), first_page=page_num, last_page=page_num
-            )
-            for image in images:
-                page_text = pytesseract.image_to_string(image)
-                text += f"PAGE {page_num}: {page_text}\n"
-        text += "\n\n\n"
-        pdf_number += 1
+    pdf_reader = PdfReader(pdf)
+    for page_num, page in enumerate(pdf_reader.pages, start=1):
+        images = convert_from_bytes(
+            pdf.getvalue(), first_page=page_num, last_page=page_num
+        )
+        for image in images:
+            page_text = pytesseract.image_to_string(image)
+            text += f"PAGE {page_num}: {page_text}\n"
+    text += "\n\n\n"
     return text
 
 
@@ -63,23 +59,35 @@ def main():
             value=(200, 300),
             step=50,
             min_value=50,
-            max_value=2000,
+            max_value=1000,
         )
         word_range = " to ".join(map(str, word_range))
         st.subheader("Your Documents")
-        pdfs = st.file_uploader("upload your PDFs", accept_multiple_files=True)
-        prossess = st.button("Process")
-        st.write("To save the note as PDF, Hide the sidebar and press Ctrl + P")
-    if prossess:
+        pdf = st.file_uploader("upload your PDF", accept_multiple_files=False, type="pdf")
+        process = st.button("Process")
+
+        
+
+    if process and pdf:
         with st.spinner("Processing"):
-            raw_text = get_pdf_text(pdfs)
+            raw_text = get_pdf_text(pdf)
             chain = get_llm(selected_llm)
             output = chain.invoke({"transcript": raw_text, "word_range": word_range})
             if selected_llm == "llama3-70b-8192":
                 output = output.content
-            st.markdown(output)
+            st.session_state['output'] = output
+            st.session_state['pdf_name'] = os.path.splitext(pdf.name)[0] if pdf else "note"
+            st.success("Note Crafted!")
 
-            st.success("NOTE CREATED USING NoteCraft AI")
+    if 'output' in st.session_state:
+        st.markdown(st.session_state['output'])
+        with st.sidebar:
+            st.download_button(
+                label="Download Note as .md",
+                data=st.session_state['output'],
+                file_name=f"{st.session_state['pdf_name']}.md",
+                mime="text/markdown"
+            )
 
 
 if __name__ == "__main__":

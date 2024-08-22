@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 import os
 from langchain_google_genai import GoogleGenerativeAI
 import pandas as pd
+import io
 
 def get_pdf_text(pdf):
     text = ""
@@ -86,9 +87,9 @@ def main():
         flashcard_range = " to ".join(map(str, flashcard_range))
 
         st.subheader("Your Document")
-        pdf = st.file_uploader("upload your PDF", accept_multiple_files=False)
+        pdf = st.file_uploader("upload your PDF", accept_multiple_files=False, type="pdf")
         prossess = st.button("Process")
-    if prossess:
+    if prossess and pdf:
         with st.spinner("Processing"):
             raw_text = get_pdf_text(pdf)
             chain = get_llm(selected_llm, flashcard_type)
@@ -97,24 +98,21 @@ def main():
             )
             if selected_llm == "llama3-70b-8192":
                 output = output.content
-            # Save output to CSV file
-            pdf_name = os.path.splitext(pdf.name)[0]
-            csv_file_name = f"{pdf_name}.csv"
-            with open(csv_file_name, "w") as f:
-                f.write(output)
-
-            
-            st.write(pd.read_csv(csv_file_name, sep="|"))
-            # Provide download button
-            st.download_button(
-                label=f"Download {csv_file_name}",
-                data=output,
-                file_name=csv_file_name,
-                mime="text/csv",
-            )
+            st.session_state["output"] = output
 
             st.success(
-                'FLASHCARDS GENERATED! You can download the CSV file below and upload it to anki! make sure to choose "Pipe" as the seperator.'
+                'FLASHCARDS Crafted! You can download the CSV file below and upload it to anki! make sure to choose "Pipe" as the seperator.'
+            )
+    if "output" in st.session_state:
+        output_io = io.StringIO(st.session_state["output"])
+        st.write(pd.read_csv(output_io, sep="|")) 
+        pdf_name = os.path.splitext(pdf.name)[0]
+        with st.sidebar:
+            st.download_button(
+                label=f"Download flashcards as .csv",
+                data=st.session_state["output"],
+                file_name=f"{pdf_name}.csv",
+                mime="text/csv",
             )
 
 
