@@ -10,12 +10,12 @@ Install the requirements:
 pip install -r requirements.txt
 ```
 
-install tesseract-ocr:
+install tesseract-ocr and poppler:
 
 on debian run:
 
 ```bash
-sudo apt install tesseract-ocr
+sudo apt install tesseract-ocr poppler-utils
 ```
 
 Run the application:
