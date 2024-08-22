@@ -65,7 +65,7 @@ def get_llm(selected_llm, flashcard_type):
 def main():
     load_dotenv()
     st.set_page_config(
-        page_title="<NOTE • V1> - Flashcards Generator", page_icon=":robot_face:"
+        page_title="<NOTE • V1> - Flashcards Generator", page_icon="📝"
     )
 
     st.header("<NOTE • V1>")

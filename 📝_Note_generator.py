@@ -52,7 +52,7 @@ def get_llm(selected_llm):
 
 def main():
     load_dotenv()
-    st.set_page_config(page_title="<NOTE • V1>", page_icon=":robot_face:")
+    st.set_page_config(page_title="<NOTE • V1>", page_icon="📝")
 
     st.header("<NOTE • V1>")
 
@@ -69,6 +69,7 @@ def main():
         st.subheader("Your Documents")
         pdfs = st.file_uploader("upload your PDFs", accept_multiple_files=True)
         prossess = st.button("Process")
+        st.write("To save the note as PDF, Hide the sidebar and press Ctrl + P")
     if prossess:
         with st.spinner("Processing"):
             raw_text = get_pdf_text(pdfs)

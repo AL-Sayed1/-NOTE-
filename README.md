@@ -10,7 +10,15 @@ Install the requirements:
 pip install -r requirements.txt
 ```
 
+install tesseract-ocr:
+
+on debian run:
+
+```bash
+sudo apt install tesseract-ocr
+```
+
 Run the application:
 ```bash
-streamlit run "<NOTE> generator.py"
+streamlit run 📝_Note_generator.py
 ```
