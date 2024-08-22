@@ -6,4 +6,3 @@ PyPDF2==3.0.1
 pytesseract==0.3.13
 python-dotenv==1.0.1
 streamlit==1.37.1
-dotenv
