@@ -27,14 +27,14 @@ def get_pdf_text(pdfs):
 
 
 def get_llm(selected_llm):
-    if selected_llm == "groq":
+    if selected_llm == "llama3-70b-8192":
         llm = ChatGroq(
-            model_name="llama-3.1-70b-versatile",
+            model_name="llama3-70b-8192",
             temperature=0.3,
         )
     elif selected_llm == "gemini-pro":
         llm = GoogleGenerativeAI(
-            model="gemini-pro",
+            model="gemini-1.5-pro",
             google_api_key=get_key(dotenv_path=".env", key_to_get="GOOGLE_API_KEY"),
         )
     prompt = ChatPromptTemplate.from_messages(
@@ -57,7 +57,7 @@ def main():
     st.header("<NOTE • V1>")
 
     with st.sidebar:
-        selected_llm = st.selectbox("Choose LLM", ("groq", "gemini-pro"))
+        selected_llm = st.selectbox("Choose LLM", ("gemini-pro", "llama3-70b-8192"))
         word_range = st.slider(
             "Select the word range",
             value=(200, 300),
@@ -74,7 +74,7 @@ def main():
             raw_text = get_pdf_text(pdfs)
             chain = get_llm(selected_llm)
             output = chain.invoke({"transcript": raw_text, "word_range": word_range})
-            if selected_llm == "groq":
+            if selected_llm == "llama3-70b-8192":
                 output = output.content
             st.markdown(output)
 
