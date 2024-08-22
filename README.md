@@ -1,6 +1,6 @@
-# < NOTE >
+# NoteCraft AI
 
-< NOTE > is a tool used to generate notes and flashcards using AI
+NoteCraft AI is a tool used to generate notes and flashcards using AI
 
 ## Usage
 

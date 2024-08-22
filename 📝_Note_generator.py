@@ -52,9 +52,9 @@ def get_llm(selected_llm):
 
 def main():
     load_dotenv()
-    st.set_page_config(page_title="<NOTE • V1>", page_icon="📝")
+    st.set_page_config(page_title="NoteCraft AI", page_icon="📝")
 
-    st.header("<NOTE • V1>")
+    st.header("NoteCraft AI")
 
     with st.sidebar:
         selected_llm = st.selectbox("Choose LLM", ("gemini-pro", "llama3-70b-8192"))
@@ -79,7 +79,7 @@ def main():
                 output = output.content
             st.markdown(output)
 
-            st.success("NOTE CREATED USING <NOTE • V1>")
+            st.success("NOTE CREATED USING NoteCraft AI")
 
 
 if __name__ == "__main__":

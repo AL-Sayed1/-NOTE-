@@ -65,10 +65,10 @@ def get_llm(selected_llm, flashcard_type):
 def main():
     load_dotenv()
     st.set_page_config(
-        page_title="<NOTE • V1> - Flashcards Generator", page_icon="📝"
+        page_title="NoteCraft AI - Flashcards Generator", page_icon="📝"
     )
 
-    st.header("<NOTE • V1>")
+    st.header("NoteCraft AI - Flashcards Generator")
 
     with st.sidebar:
         selected_llm = st.selectbox("Choose LLM", ("gemini-pro", "llama3-70b-8192"))
