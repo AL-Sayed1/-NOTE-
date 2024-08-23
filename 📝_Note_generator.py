@@ -8,16 +8,25 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import GoogleGenerativeAI
 import os
 
+
 def get_pdf_text(pdf):
     text = ""
     pdf_reader = PdfReader(pdf)
     for page_num, page in enumerate(pdf_reader.pages, start=1):
+        # Extract text directly from the page
+        page_text = page.extract_text() or ""
+        
+        # Check for images and extract text from them
         images = convert_from_bytes(
             pdf.getvalue(), first_page=page_num, last_page=page_num
         )
         for image in images:
-            page_text = pytesseract.image_to_string(image)
-            text += f"PAGE {page_num}: {page_text}\n"
+            image_text = pytesseract.image_to_string(image)
+            if image_text.strip():  # Only add if there's text
+                page_text += f" {image_text}"
+        
+        text += f"PAGE {page_num}: {page_text}\n"
+    
     text += "\n\n\n"
     return text
 
