@@ -1,83 +1,23 @@
 import streamlit as st
-from dotenv import load_dotenv, get_key
-from PyPDF2 import PdfReader
-from pdf2image import convert_from_bytes
-import pytesseract
-from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
 import os
-from langchain_google_genai import GoogleGenerativeAI
 import pandas as pd
 import io
+import pdf_handler
+from llm_worker import worker
+from streamlit_cookies_manager import EncryptedCookieManager
 
-def get_pdf_text(pdf):
-    text = ""
-    pdf_reader = PdfReader(pdf)
-    for page_num, page in enumerate(pdf_reader.pages, start=1):
-        # Extract text directly from the page
-        page_text = page.extract_text() or ""
-        
-        # Check for images and extract text from them
-        images = convert_from_bytes(
-            pdf.getvalue(), first_page=page_num, last_page=page_num
-        )
-        for image in images:
-            image_text = pytesseract.image_to_string(image)
-            if image_text.strip():  # Only add if there's text
-                page_text += f" {image_text}"
-        
-        text += f"PAGE {page_num}: {page_text}\n"
-    
-    text += "\n\n\n"
-    return text
-
-
-def get_llm(selected_llm, flashcard_type):
-    if selected_llm == "llama3-70b-8192":
-        llm = ChatGroq(
-            model_name="llama3-70b-8192",
-            temperature=0.3,
-        )
-    elif selected_llm == "gemini-pro":
-        llm = GoogleGenerativeAI(
-            model="gemini-1.5-pro",
-            google_api_key=get_key(dotenv_path=".env", key_to_get="GOOGLE_API_KEY"),
-        )
-
-    if flashcard_type == "Term --> Definition":
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are tasked with creating flashcards that will help students learn the important terms, proper nouns and concepts in this note. Only make flashcards directly related to the main idea of the note, include as much detail as possible in each flashcard, returning it in a CSV formate with | as the seperator like this: Term | Definition. make exactly from {flashcard_range} flashcards. only return the csv data without any other information.",
-                ),
-                ("user", "{transcript}"),
-            ]
-        )
-    elif flashcard_type == "Question --> Answer":
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are tasked with creating a mock test that will help students learn and understand concepts in this note. Only make questions directly related to the main idea of the note, You should include all these question types: fill in the blank, essay questions and True or False. return the questions and answers in a CSV formate with | as the seperator like this: This is a question | This is the answer. make exactly from {flashcard_range} Questions, Make sure to not generate less or more than the given amount or you will be punished. only return the csv data without any other information.",
-                ),
-                ("user", "{transcript}"),
-            ]
-        )
-    chain = prompt | llm
-    return chain
+st.set_page_config(page_title="NoteCraft AI - Flashcards Generator", page_icon="📝")
+cookies = EncryptedCookieManager(
+    prefix="AL-Sayed1/NOTECRAFT_AI_WEB",
+    password=os.environ.get("COOKIES_PASSWORD", "COOKIES_PASSWORD"),
+)
 
 
 def main():
-    load_dotenv()
-    st.set_page_config(
-        page_title="NoteCraft AI - Flashcards Generator", page_icon="📝"
-    )
-
     st.header("NoteCraft AI - Flashcards Generator")
 
     with st.sidebar:
-        selected_llm = st.selectbox("Choose LLM", ("gemini-pro", "llama3-70b-8192"))
+        selected_llm = st.selectbox("Choose LLM", ("gemini-pro", "llama-3.1-70b-versatile"))
 
         flashcard_type = st.radio(
             "Flashcard Type", ["Term --> Definition", "Question --> Answer"]
@@ -92,25 +32,42 @@ def main():
         flashcard_range = " to ".join(map(str, flashcard_range))
 
         st.subheader("Your Document")
-        pdf = st.file_uploader("upload your PDF", accept_multiple_files=False, type="pdf")
+        pdf = st.file_uploader(
+            "upload your PDF", accept_multiple_files=False, type="pdf"
+        )
         prossess = st.button("Process")
-    if prossess and pdf:
-        with st.spinner("Processing"):
-            raw_text = get_pdf_text(pdf)
-            chain = get_llm(selected_llm, flashcard_type)
-            output = chain.invoke(
-                {"transcript": raw_text, "flashcard_range": flashcard_range}
-            )
-            if selected_llm == "llama3-70b-8192":
-                output = output.content
-            st.session_state["output"] = output
 
-            st.success(
-                'FLASHCARDS Crafted! You can download the CSV file below and upload it to anki! make sure to choose "Pipe" as the seperator.'
-            )
+    if pdf: 
+        max_pages = pdf_handler.page_count(pdf)
+        with st.sidebar:
+            pages = st.slider("Select the pages to generate notes from: ", value=(1, max_pages), min_value=1, max_value=max_pages)
+        if prossess:
+            with st.spinner("Processing"):
+                try:
+                    llm_worker = worker(selected_llm, cookies, flashcard_type)
+                    chain = llm_worker.get_chain()
+                except KeyError:
+                    st.error(
+                        f"You do not have access to {selected_llm}, please [get access](/get_access) first and try again."
+                    )
+                    st.stop()
+                st.session_state.raw_text = pdf_handler.get_pdf_text(pdf, page_range=pages)
+                output = chain.invoke(
+                    {
+                        "transcript": st.session_state.raw_text,
+                        "flashcard_range": flashcard_range,
+                    }
+                )
+                if selected_llm == "llama-3.1-70b-versatile":
+                    output = output.content
+                st.session_state["output"] = output
+
+                st.success(
+                    'FLASHCARDS Crafted! You can download the CSV file below and upload it to anki! make sure to choose "Tab" as the Field separator.'
+                )
     if "output" in st.session_state:
         output_io = io.StringIO(st.session_state["output"])
-        st.write(pd.read_csv(output_io, sep="|")) 
+        st.write(pd.read_csv(output_io, sep="\t"))
         pdf_name = os.path.splitext(pdf.name)[0]
         with st.sidebar:
             st.download_button(
@@ -119,6 +76,15 @@ def main():
                 file_name=f"{pdf_name}.csv",
                 mime="text/csv",
             )
+        usr_suggestion = st.chat_input("Suggest an edit")
+        if usr_suggestion:
+            editor = worker(selected_llm, cookies, "edit_flashcard")
+            editor_chain = editor.get_chain()
+            output = editor_chain.invoke(
+                {"request": usr_suggestion, "flashcards": st.session_state["output"]}
+            )
+            st.session_state["output"] = output
+            st.rerun()
 
 
 if __name__ == "__main__":
