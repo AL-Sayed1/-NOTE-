@@ -1,10 +1,11 @@
 import streamlit as st
+st.set_page_config(page_title="NoteCraft AI", page_icon="📝")
 import os
 import pdf_handler
 from llm_worker import worker
 from streamlit_cookies_manager import EncryptedCookieManager
 
-st.set_page_config(page_title="NoteCraft AI", page_icon="📝")
+
 cookies = EncryptedCookieManager(
     prefix="AL-Sayed1/NOTECRAFT_AI_WEB",
     password=os.environ.get("COOKIES_PASSWORD", "COOKIES_PASSWORD"),
@@ -32,8 +33,13 @@ def main():
         process = st.button("Process")
     if pdf: 
         max_pages = pdf_handler.page_count(pdf)
-        with st.sidebar:
-            pages = st.slider("Select the pages to generate notes from: ", value=(1, max_pages), min_value=1, max_value=max_pages)
+        if max_pages != 1:
+            with st.sidebar:
+                pages = st.slider("Select the pages to generate notes from: ", value=(1, max_pages), min_value=1, max_value=max_pages)
+        else:
+            pages = (1, 1)
+            with st.sidebar:
+                st.write("Only one page in the document")
         if process:
             with st.spinner("Processing"):
                 try:

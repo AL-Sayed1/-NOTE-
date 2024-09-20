@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="NoteCraft AI - Flashcards Generator", page_icon="📝")
 import os
 import pandas as pd
 import io
@@ -6,7 +7,7 @@ import pdf_handler
 from llm_worker import worker
 from streamlit_cookies_manager import EncryptedCookieManager
 
-st.set_page_config(page_title="NoteCraft AI - Flashcards Generator", page_icon="📝")
+
 cookies = EncryptedCookieManager(
     prefix="AL-Sayed1/NOTECRAFT_AI_WEB",
     password=os.environ.get("COOKIES_PASSWORD", "COOKIES_PASSWORD"),
@@ -39,8 +40,13 @@ def main():
 
     if pdf: 
         max_pages = pdf_handler.page_count(pdf)
-        with st.sidebar:
-            pages = st.slider("Select the pages to generate notes from: ", value=(1, max_pages), min_value=1, max_value=max_pages)
+        if max_pages != 1:
+            with st.sidebar:
+                pages = st.slider("Select the pages to generate notes from: ", value=(1, max_pages), min_value=1, max_value=max_pages)
+        else:
+            pages = (1, 1)
+            with st.sidebar:
+                st.write("Only one page in the document")
         if prossess:
             with st.spinner("Processing"):
                 try:
@@ -62,13 +68,12 @@ def main():
                     output = output.content
                 st.session_state["output"] = output
 
-                st.success(
-                    'FLASHCARDS Crafted! You can download the CSV file below and upload it to anki! make sure to choose "Tab" as the Field separator.'
-                )
+                
     if "output" in st.session_state:
         output_io = io.StringIO(st.session_state["output"])
         st.write(pd.read_csv(output_io, sep="\t"))
         pdf_name = os.path.splitext(pdf.name)[0]
+        
         with st.sidebar:
             st.download_button(
                 label=f"Download flashcards as .csv",
@@ -76,6 +81,9 @@ def main():
                 file_name=f"{pdf_name}.csv",
                 mime="text/csv",
             )
+        st.success(
+                    'FLASHCARDS Crafted! You can download the CSV file below and upload it to anki! make sure to choose "Tab" as the Field separator.'
+                )
         usr_suggestion = st.chat_input("Suggest an edit")
         if usr_suggestion:
             editor = worker(selected_llm, cookies, "edit_flashcard")
