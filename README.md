@@ -1,24 +1,44 @@
-# NoteCraft AI
+# 📝 NoteCraft AI
 
-NoteCraft AI is a tool used to generate notes and flashcards using AI
+**NoteCraft AI** is a powerful, free, and open-source tool designed to create study materials (Notes and Flashcards)
+---
 
-## Usage
+## 🌟 Features
 
-Install the requirements:
+- AI-powered **note generator**.
+- **Flashcard generator** to create study materials for quick revision
+- Supports OCR for extracting text from images in PDFs
+
+---
+
+### Note Generator Interface
+![Note Generator](screenshots/note_generator.png)
+
+### Flashcard Generator Interface
+![Flashcard Generator](screenshots/flashcard_generator.png)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repository and install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-install tesseract-ocr and poppler:
+### 2. Install `tesseract-ocr` and `poppler` (required for OCR functionality):
 
-on debian run:
+For Debian-based systems, run:
 
 ```bash
 sudo apt install tesseract-ocr poppler-utils
 ```
 
-Run the application:
+### 3. Run the application:
+
 ```bash
 streamlit run 📝_Note_generator.py
 ```
+
+---
